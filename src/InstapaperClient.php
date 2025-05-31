@@ -1,16 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InstapaperToPodcast;
 
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\RequestException;
+use InstapaperToPodcast\Contracts\InstapaperClientInterface;
+use InstapaperToPodcast\Exceptions\InstapaperApiException;
 
 /**
  * Instapaper API クライアント
  *
  * @psalm-import-type Bookmark from ConfigTypes
  */
-class InstapaperClient
+final class InstapaperClient implements InstapaperClientInterface
 {
     private string $consumerKey;
     private string $consumerSecret;
@@ -52,7 +56,7 @@ class InstapaperClient
             $data = json_decode($content, true);
 
             if (! is_array($data)) {
-                throw new \RuntimeException('Invalid response from Instapaper API');
+                throw InstapaperApiException::invalidResponse('Expected array, got ' . gettype($data));
             }
 
             /** @var list<Bookmark> */
@@ -79,7 +83,11 @@ class InstapaperClient
             return $bookmarks;
 
         } catch (RequestException $e) {
-            throw new \RuntimeException('Failed to fetch bookmarks: ' . $e->getMessage());
+            $response = $e->getResponse();
+            throw InstapaperApiException::fromRequestFailure(
+                $e->getMessage(),
+                $response !== null ? $response->getStatusCode() : null
+            );
         }
     }
 
@@ -99,7 +107,11 @@ class InstapaperClient
             return strip_tags($response->getBody()->getContents());
 
         } catch (RequestException $e) {
-            throw new \RuntimeException('Failed to fetch article text: ' . $e->getMessage());
+            $response = $e->getResponse();
+            throw InstapaperApiException::fromRequestFailure(
+                $e->getMessage(),
+                $response !== null ? $response->getStatusCode() : null
+            );
         }
     }
 
@@ -113,7 +125,7 @@ class InstapaperClient
             'oauth_consumer_key' => $this->consumerKey,
             'oauth_nonce' => bin2hex(random_bytes(16)),
             'oauth_signature_method' => 'HMAC-SHA1',
-            'oauth_timestamp' => (string) time(),
+            'oauth_timestamp' => strval(time()),
             'oauth_token' => $this->accessToken,
             'oauth_version' => '1.0',
         ];

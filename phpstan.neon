@@ -1,14 +1,19 @@
 includes:
     - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
     level: max
+    
     paths:
         - src
+        - index.php
+    
     excludePaths:
-        - src/backup*
-    bootstrapFiles:
-        - vendor/autoload.php
-    checkGenericClassInNonGenericObjectType: true
+        - tests/bootstrap.php
+    
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false
+    
+    bootstrapFiles:
+        - vendor/autoload.php
