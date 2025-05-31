@@ -6,12 +6,12 @@ namespace InstapaperToPodcast;
 
 use Google\Cloud\TextToSpeech\V1\AudioConfig;
 use Google\Cloud\TextToSpeech\V1\AudioEncoding;
+use Google\Cloud\TextToSpeech\V1\Client\TextToSpeechClient;
 use Google\Cloud\TextToSpeech\V1\SsmlVoiceGender;
 use Google\Cloud\TextToSpeech\V1\SynthesisInput;
-use Google\Cloud\TextToSpeech\V1\TextToSpeechClient;
+use Google\Cloud\TextToSpeech\V1\SynthesizeSpeechRequest;
 use Google\Cloud\TextToSpeech\V1\VoiceSelectionParams;
 use InstapaperToPodcast\Contracts\TextToSpeechInterface;
-use InstapaperToPodcast\Exceptions\TextProcessingException;
 
 /**
  * 音声生成クラス
@@ -47,7 +47,7 @@ final class TextToSpeechGenerator implements TextToSpeechInterface
             'speakingRate' => 1.0,
             'pitch' => 0.0,
         ], $voiceConfig);
-        
+
         $this->voiceConfig = $mergedConfig;
     }
 
@@ -72,7 +72,12 @@ final class TextToSpeechGenerator implements TextToSpeechInterface
         $audioConfig->setPitch($this->voiceConfig['pitch']);
 
         try {
-            $response = $this->client->synthesizeSpeech($input, $voice, $audioConfig);
+            $request = new SynthesizeSpeechRequest();
+            $request->setInput($input);
+            $request->setVoice($voice);
+            $request->setAudioConfig($audioConfig);
+
+            $response = $this->client->synthesizeSpeech($request);
             $audioContent = $response->getAudioContent();
 
             file_put_contents($outputPath, $audioContent);

@@ -28,12 +28,14 @@ final class Url
     public function getHost(): string
     {
         $parsed = parse_url($this->value);
+
         return $parsed['host'] ?? '';
     }
 
     public function getScheme(): string
     {
         $parsed = parse_url($this->value);
+
         return $parsed['scheme'] ?? '';
     }
 

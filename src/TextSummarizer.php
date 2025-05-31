@@ -6,7 +6,6 @@ namespace InstapaperToPodcast;
 
 use GuzzleHttp\Client as HttpClient;
 use InstapaperToPodcast\Contracts\TextSummarizerInterface;
-use InstapaperToPodcast\Exceptions\TextProcessingException;
 
 /**
  * テキスト要約クラス（Vertex AI使用）

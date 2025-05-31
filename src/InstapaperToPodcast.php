@@ -39,11 +39,11 @@ final class InstapaperToPodcast
         );
 
         $this->summarizer = new TextSummarizer($config['gcp']['project_id']);
-        
+
         /** @var array{languageCode?: string, name?: string, ssmlGender?: int, speakingRate?: float, pitch?: float} $ttsConfig */
         $ttsConfig = $config['tts'] ?? [];
         $this->tts = new TextToSpeechGenerator($ttsConfig);
-        
+
         $this->storage = new CloudStorageUploader(
             $config['storage']['bucket_name'],
             $config['gcp']['credentials_path'] ?? null
@@ -233,6 +233,7 @@ final class InstapaperToPodcast
             if ($aTime === false || $bTime === false) {
                 return 0;
             }
+
             return $bTime - $aTime;
         });
         $allEpisodes = array_slice($allEpisodes, 0, 50);

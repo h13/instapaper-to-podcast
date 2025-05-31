@@ -60,7 +60,7 @@ final class PodcastFeedGenerator implements PodcastFeedGeneratorInterface
             'copyright' => 'All rights reserved',
             'image' => null,
         ], $config);
-        
+
         $this->config = $mergedConfig;
     }
 
@@ -98,6 +98,7 @@ final class PodcastFeedGenerator implements PodcastFeedGeneratorInterface
         if ($result === false) {
             throw new \RuntimeException('Failed to save XML');
         }
+
         return $result;
     }
 
@@ -146,7 +147,7 @@ final class PodcastFeedGenerator implements PodcastFeedGeneratorInterface
         $articleUrl = isset($episode['articleUrl']) && is_scalar($episode['articleUrl']) ? (string)$episode['articleUrl'] : '';
         $guid = is_scalar($episode['guid']) ? (string)$episode['guid'] : '';
         $created = is_scalar($episode['created']) ? (string)$episode['created'] : '';
-        
+
         $item->addChild('title', htmlspecialchars($title));
         $item->addChild('description', htmlspecialchars($description));
         $item->addChild('link', htmlspecialchars($articleUrl));
@@ -157,7 +158,7 @@ final class PodcastFeedGenerator implements PodcastFeedGeneratorInterface
         $enclosure = $item->addChild('enclosure');
         $audioUrl = is_scalar($episode['audioUrl']) ? (string)$episode['audioUrl'] : '';
         $size = isset($episode['size']) && is_numeric($episode['size']) ? (string)$episode['size'] : '0';
-        
+
         $enclosure->addAttribute('url', $audioUrl);
         $enclosure->addAttribute('length', $size);
         $enclosure->addAttribute('type', 'audio/mpeg');
