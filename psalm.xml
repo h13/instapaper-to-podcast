@@ -8,6 +8,7 @@
     findUnusedVariablesAndParams="true"
     findUnusedCode="true"
     findUnusedPsalmSuppress="true"
+    findUnusedBaselineEntry="false"
 >
     <projectFiles>
         <directory name="src" />

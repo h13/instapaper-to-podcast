@@ -5,6 +5,7 @@ namespace InstapaperToPodcast;
 /**
  * 設定の型定義
  *
+ * @psalm-suppress UnusedClass
  * @psalm-type InstapaperConfig = array{
  *     consumer_key: string,
  *     consumer_secret: string,

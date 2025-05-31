@@ -38,3 +38,6 @@ service-account-key.json
 *.tmp
 *.temp
 /tmp/
+
+# Claude
+.claude/settings.local.json
