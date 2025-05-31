@@ -1,17 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InstapaperToPodcast;
+
+use InstapaperToPodcast\Contracts\PodcastFeedGeneratorInterface;
 
 /**
  * Podcast RSS フィード生成
  */
-class PodcastFeedGenerator
+final class PodcastFeedGenerator implements PodcastFeedGeneratorInterface
 {
+    /** @var array{
+     *   title: string,
+     *   description: string,
+     *   author: string,
+     *   email: string,
+     *   category: string,
+     *   language: string,
+     *   copyright: string,
+     *   image?: string|null,
+     *   feedUrl?: string
+     * } */
     private array $config;
 
+    /**
+     * @param array{
+     *   title?: string,
+     *   description?: string,
+     *   author?: string,
+     *   email?: string,
+     *   category?: string,
+     *   language?: string,
+     *   copyright?: string,
+     *   image?: string|null,
+     *   feedUrl?: string
+     * } $config
+     */
     public function __construct(array $config)
     {
-        $this->config = array_merge([
+        /** @var array{
+         *   title: string,
+         *   description: string,
+         *   author: string,
+         *   email: string,
+         *   category: string,
+         *   language: string,
+         *   copyright: string,
+         *   image?: string|null,
+         *   feedUrl?: string
+         * } $mergedConfig */
+        $mergedConfig = array_merge([
             'title' => 'Instapaper Podcast',
             'description' => 'Articles from Instapaper converted to audio',
             'author' => 'Instapaper to Podcast',
@@ -21,6 +60,8 @@ class PodcastFeedGenerator
             'copyright' => 'All rights reserved',
             'image' => null,
         ], $config);
+        
+        $this->config = $mergedConfig;
     }
 
     /**
@@ -47,41 +88,49 @@ class PodcastFeedGenerator
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = true;
-        $dom->loadXML($xml->asXML());
+        $xmlString = $xml->asXML();
+        if ($xmlString === false) {
+            throw new \RuntimeException('Failed to generate XML');
+        }
+        $dom->loadXML($xmlString);
 
-        return $dom->saveXML();
+        $result = $dom->saveXML();
+        if ($result === false) {
+            throw new \RuntimeException('Failed to save XML');
+        }
+        return $result;
     }
 
     private function addChannelInfo(\SimpleXMLElement $channel): void
     {
-        $channel->addChild('title', htmlspecialchars((string) $this->config['title']));
-        $channel->addChild('description', htmlspecialchars((string) $this->config['description']));
-        $channel->addChild('language', (string) $this->config['language']);
-        $channel->addChild('copyright', htmlspecialchars((string) $this->config['copyright']));
+        $channel->addChild('title', htmlspecialchars($this->config['title']));
+        $channel->addChild('description', htmlspecialchars($this->config['description']));
+        $channel->addChild('language', $this->config['language']);
+        $channel->addChild('copyright', htmlspecialchars($this->config['copyright']));
         $channel->addChild('lastBuildDate', date('r'));
         $channel->addChild('generator', 'Instapaper to Podcast');
 
         if (isset($this->config['feedUrl'])) {
             $atomLink = $channel->addChild('atom:link', null, 'http://www.w3.org/2005/Atom');
-            $atomLink->addAttribute('href', (string) $this->config['feedUrl']);
+            $atomLink->addAttribute('href', $this->config['feedUrl']);
             $atomLink->addAttribute('rel', 'self');
             $atomLink->addAttribute('type', 'application/rss+xml');
         }
 
-        $channel->addChild('itunes:author', htmlspecialchars((string) $this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $channel->addChild('itunes:summary', htmlspecialchars((string) $this->config['description']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $channel->addChild('itunes:author', htmlspecialchars($this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $channel->addChild('itunes:summary', htmlspecialchars($this->config['description']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
         $channel->addChild('itunes:explicit', 'no', 'http://www.itunes.com/dtds/podcast-1.0.dtd');
 
         $owner = $channel->addChild('itunes:owner', null, 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $owner->addChild('itunes:name', htmlspecialchars((string) $this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $owner->addChild('itunes:email', (string) $this->config['email'], 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $owner->addChild('itunes:name', htmlspecialchars($this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $owner->addChild('itunes:email', $this->config['email'], 'http://www.itunes.com/dtds/podcast-1.0.dtd');
 
         $category = $channel->addChild('itunes:category', null, 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $category->addAttribute('text', (string) $this->config['category']);
+        $category->addAttribute('text', $this->config['category']);
 
-        if ($this->config['image']) {
+        if (isset($this->config['image']) && $this->config['image'] !== '') {
             $image = $channel->addChild('itunes:image', null, 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-            $image->addAttribute('href', (string) $this->config['image']);
+            $image->addAttribute('href', $this->config['image']);
         }
     }
 
@@ -92,20 +141,31 @@ class PodcastFeedGenerator
     {
         $item = $channel->addChild('item');
 
-        $item->addChild('title', htmlspecialchars((string) $episode['title']));
-        $item->addChild('description', htmlspecialchars((string) $episode['description']));
-        $item->addChild('link', htmlspecialchars((string) ($episode['articleUrl'] ?? '')));
-        $item->addChild('guid', (string) $episode['guid'])->addAttribute('isPermaLink', 'false');
-        $item->addChild('pubDate', date('r', strtotime((string) $episode['created'])));
+        $title = is_scalar($episode['title']) ? (string)$episode['title'] : '';
+        $description = is_scalar($episode['description']) ? (string)$episode['description'] : '';
+        $articleUrl = isset($episode['articleUrl']) && is_scalar($episode['articleUrl']) ? (string)$episode['articleUrl'] : '';
+        $guid = is_scalar($episode['guid']) ? (string)$episode['guid'] : '';
+        $created = is_scalar($episode['created']) ? (string)$episode['created'] : '';
+        
+        $item->addChild('title', htmlspecialchars($title));
+        $item->addChild('description', htmlspecialchars($description));
+        $item->addChild('link', htmlspecialchars($articleUrl));
+        $item->addChild('guid', $guid)->addAttribute('isPermaLink', 'false');
+        $timestamp = strtotime($created);
+        $item->addChild('pubDate', date('r', $timestamp !== false ? $timestamp : time()));
 
         $enclosure = $item->addChild('enclosure');
-        $enclosure->addAttribute('url', (string) $episode['audioUrl']);
-        $enclosure->addAttribute('length', (string) ($episode['size'] ?? 0));
+        $audioUrl = is_scalar($episode['audioUrl']) ? (string)$episode['audioUrl'] : '';
+        $size = isset($episode['size']) && is_numeric($episode['size']) ? (string)$episode['size'] : '0';
+        
+        $enclosure->addAttribute('url', $audioUrl);
+        $enclosure->addAttribute('length', $size);
         $enclosure->addAttribute('type', 'audio/mpeg');
 
-        $item->addChild('itunes:author', htmlspecialchars((string) $this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $item->addChild('itunes:summary', htmlspecialchars((string) $episode['description']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
-        $item->addChild('itunes:duration', (string) ($episode['duration'] ?? '00:00:00'), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $item->addChild('itunes:author', htmlspecialchars($this->config['author']), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $item->addChild('itunes:summary', htmlspecialchars($description), 'http://www.itunes.com/dtds/podcast-1.0.dtd');
+        $duration = isset($episode['duration']) && is_scalar($episode['duration']) ? (string)$episode['duration'] : '00:00:00';
+        $item->addChild('itunes:duration', $duration, 'http://www.itunes.com/dtds/podcast-1.0.dtd');
         $item->addChild('itunes:explicit', 'no', 'http://www.itunes.com/dtds/podcast-1.0.dtd');
     }
 }

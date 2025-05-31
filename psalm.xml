@@ -25,7 +25,19 @@
         <UnusedProperty errorLevel="error" />
         <UnusedClass errorLevel="error" />
         <UnusedMethod errorLevel="error" />
-        <PossiblyUnusedMethod errorLevel="error" />
+        <!-- Value Objects, Exceptions, Interfacesは将来使用するため抑制 -->
+        <PossiblyUnusedMethod>
+            <errorLevel type="suppress">
+                <directory name="src/ValueObjects" />
+                <directory name="src/Exceptions" />
+                <directory name="src/Contracts" />
+            </errorLevel>
+        </PossiblyUnusedMethod>
+        <PossiblyUnusedReturnValue>
+            <errorLevel type="suppress">
+                <directory name="src/Contracts" />
+            </errorLevel>
+        </PossiblyUnusedReturnValue>
         <PossiblyUnusedProperty errorLevel="error" />
         <PossiblyUnusedParam errorLevel="error" />
         

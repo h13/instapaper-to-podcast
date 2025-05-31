@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InstapaperToPodcast;
 
 /**
@@ -10,7 +12,7 @@ namespace InstapaperToPodcast;
  * @psalm-import-type Bookmark from ConfigTypes
  * @psalm-import-type Episode from ConfigTypes
  */
-class InstapaperToPodcast
+final class InstapaperToPodcast
 {
     private InstapaperClient $instapaper;
     private TextSummarizer $summarizer;
@@ -19,7 +21,13 @@ class InstapaperToPodcast
     private PodcastFeedGenerator $feedGenerator;
 
     /**
-     * @param AppConfig $config
+     * @param array{
+     *   instapaper: array{consumer_key: string, consumer_secret: string, access_token: string, access_token_secret: string},
+     *   gcp: array{project_id: string, credentials_path?: ?string},
+     *   storage: array{bucket_name: string},
+     *   podcast?: array<string, mixed>,
+     *   tts?: array<string, mixed>
+     * } $config
      */
     public function __construct(array $config)
     {
@@ -31,17 +39,23 @@ class InstapaperToPodcast
         );
 
         $this->summarizer = new TextSummarizer($config['gcp']['project_id']);
-        $this->tts = new TextToSpeechGenerator($config['tts'] ?? []);
+        
+        /** @var array{languageCode?: string, name?: string, ssmlGender?: int, speakingRate?: float, pitch?: float} $ttsConfig */
+        $ttsConfig = $config['tts'] ?? [];
+        $this->tts = new TextToSpeechGenerator($ttsConfig);
+        
         $this->storage = new CloudStorageUploader(
             $config['storage']['bucket_name'],
             $config['gcp']['credentials_path'] ?? null
         );
 
         $feedUrl = sprintf('https://storage.googleapis.com/%s/podcast.xml', $config['storage']['bucket_name']);
-        $this->feedGenerator = new PodcastFeedGenerator(array_merge(
+        /** @var array{title?: string, description?: string, author?: string, email?: string, category?: string, language?: string, copyright?: string, image?: string|null, feedUrl?: string} $podcastConfig */
+        $podcastConfig = array_merge(
             $config['podcast'] ?? [],
             ['feedUrl' => $feedUrl]
-        ));
+        );
+        $this->feedGenerator = new PodcastFeedGenerator($podcastConfig);
     }
 
     /**
@@ -151,10 +165,10 @@ class InstapaperToPodcast
             $uploadResult = $this->storage->uploadFile($tempFile, $objectName, [
                 'title' => $title,
                 'url' => $url,
-                'bookmarkId' => (string) $bookmarkId,
-                'textLength' => (string) mb_strlen($text),
-                'originalTextLength' => (string) mb_strlen($text),
-                'summaryLength' => (string) mb_strlen($summary),
+                'bookmarkId' => strval($bookmarkId),
+                'textLength' => strval(mb_strlen($text)),
+                'originalTextLength' => strval(mb_strlen($text)),
+                'summaryLength' => strval(mb_strlen($summary)),
             ]);
 
             /** @var Episode $episode */
@@ -191,7 +205,7 @@ class InstapaperToPodcast
         // 既存のエピソードを読み込み
         $existingData = $this->storage->readJson('podcast-episodes.json');
         /** @var list<Episode> $existingEpisodes */
-        $existingEpisodes = is_array($existingData) && isset($existingData['episodes']) ? $existingData['episodes'] : [];
+        $existingEpisodes = is_array($existingData) && isset($existingData['episodes']) && is_array($existingData['episodes']) ? $existingData['episodes'] : [];
 
         // 新しいエピソードを追加（重複チェック）
         /** @var array<int, Episode> $episodeMap */
@@ -214,7 +228,12 @@ class InstapaperToPodcast
             /** @var string $bCreated */
             $bCreated = $b['created'];
 
-            return strtotime($bCreated) - strtotime($aCreated);
+            $aTime = strtotime($aCreated);
+            $bTime = strtotime($bCreated);
+            if ($aTime === false || $bTime === false) {
+                return 0;
+            }
+            return $bTime - $aTime;
         });
         $allEpisodes = array_slice($allEpisodes, 0, 50);
 
@@ -245,9 +264,9 @@ class InstapaperToPodcast
     private function sanitizeFilename(string $filename): string
     {
         // 日本語を保持しつつ、ファイルシステムで問題となる文字を除去
-        $filename = preg_replace('/[\/\\\:*?"<>|]/', '_', $filename);
-        $filename = preg_replace('/\s+/', '_', $filename);
-        $filename = preg_replace('/_+/', '_', $filename);
+        $filename = preg_replace('/[\/\\\:*?"<>|]/', '_', $filename) ?? $filename;
+        $filename = preg_replace('/\s+/', '_', $filename) ?? $filename;
+        $filename = preg_replace('/_+/', '_', $filename) ?? $filename;
         $filename = trim($filename, '_');
 
         // 長すぎる場合は切り詰める

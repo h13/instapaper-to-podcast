@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InstapaperToPodcast;
 
 use GuzzleHttp\Client as HttpClient;
+use InstapaperToPodcast\Contracts\TextSummarizerInterface;
+use InstapaperToPodcast\Exceptions\TextProcessingException;
 
 /**
  * テキスト要約クラス（Vertex AI使用）
  */
-class TextSummarizer
+final class TextSummarizer implements TextSummarizerInterface
 {
     private string $projectId;
     private string $location;

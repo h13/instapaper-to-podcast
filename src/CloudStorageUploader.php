@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InstapaperToPodcast;
 
 use Google\Cloud\Storage\Bucket;
 use Google\Cloud\Storage\StorageClient;
+use InstapaperToPodcast\Contracts\StorageInterface;
 
 /**
  * Cloud Storage アップローダー
  */
-class CloudStorageUploader
+final class CloudStorageUploader implements StorageInterface
 {
     private Bucket $bucket;
     private string $bucketName;
@@ -49,10 +52,10 @@ class CloudStorageUploader
 
             return [
                 'name' => $object->name(),
-                'size' => (int) $info['size'],
-                'created' => (string) $info['timeCreated'],
+                'size' => isset($info['size']) && is_numeric($info['size']) ? (int) $info['size'] : 0,
+                'created' => isset($info['timeCreated']) && is_string($info['timeCreated']) ? $info['timeCreated'] : '',
                 'publicUrl' => sprintf('https://storage.googleapis.com/%s/%s', $this->bucketName, $objectName),
-                'mediaLink' => (string) $info['mediaLink'],
+                'mediaLink' => isset($info['mediaLink']) && is_string($info['mediaLink']) ? $info['mediaLink'] : '',
             ];
 
         } finally {
