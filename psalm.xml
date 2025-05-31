@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="1"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedVariablesAndParams="true"
+    findUnusedCode="true"
+    findUnusedPsalmSuppress="true"
+>
+    <projectFiles>
+        <directory name="src" />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name="tests" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <issueHandlers>
+        <!-- 最高レベルのチェックを有効化 -->
+        <UnusedVariable errorLevel="error" />
+        <UnusedParam errorLevel="error" />
+        <UnusedProperty errorLevel="error" />
+        <UnusedClass errorLevel="error" />
+        <UnusedMethod errorLevel="error" />
+        <PossiblyUnusedMethod errorLevel="error" />
+        <PossiblyUnusedProperty errorLevel="error" />
+        <PossiblyUnusedParam errorLevel="error" />
+        
+        <!-- 型の厳密性 -->
+        <MixedAssignment errorLevel="error" />
+        <MixedArgument errorLevel="error" />
+        <MixedArrayAccess errorLevel="error" />
+        <MixedMethodCall errorLevel="error" />
+        <MixedPropertyFetch errorLevel="error" />
+        
+        <!-- その他の厳格なチェック -->
+        <RedundantCondition errorLevel="error" />
+        <DocblockTypeContradiction errorLevel="error" />
+        <RedundantCast errorLevel="error" />
+    </issueHandlers>
+</psalm>
