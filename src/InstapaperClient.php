@@ -58,6 +58,7 @@ class InstapaperClient
             /** @var list<Bookmark> */
             $bookmarks = [];
 
+            /** @var mixed $item */
             foreach ($data as $item) {
                 if (is_array($item) && isset($item['type']) && $item['type'] === 'bookmark') {
                     if (isset($item['bookmark_id'], $item['title'], $item['url']) &&

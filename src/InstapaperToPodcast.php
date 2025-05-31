@@ -5,6 +5,7 @@ namespace InstapaperToPodcast;
 /**
  * メインアプリケーションクラス
  *
+ * @psalm-suppress UnusedClass
  * @psalm-import-type AppConfig from ConfigTypes
  * @psalm-import-type Bookmark from ConfigTypes
  * @psalm-import-type Episode from ConfigTypes
@@ -208,7 +209,12 @@ class InstapaperToPodcast
         // 最新順にソートして上限を設定（最新50エピソード）
         $allEpisodes = array_values($episodeMap);
         usort($allEpisodes, function (array $a, array $b): int {
-            return strtotime($b['created']) - strtotime($a['created']);
+            /** @var string $aCreated */
+            $aCreated = $a['created'];
+            /** @var string $bCreated */
+            $bCreated = $b['created'];
+
+            return strtotime($bCreated) - strtotime($aCreated);
         });
         $allEpisodes = array_slice($allEpisodes, 0, 50);
 

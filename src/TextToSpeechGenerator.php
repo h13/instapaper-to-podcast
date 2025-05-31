@@ -37,14 +37,14 @@ class TextToSpeechGenerator
         $input->setText($text);
 
         $voice = new VoiceSelectionParams();
-        $voice->setLanguageCode($this->voiceConfig['languageCode']);
-        $voice->setName($this->voiceConfig['name']);
-        $voice->setSsmlGender($this->voiceConfig['ssmlGender']);
+        $voice->setLanguageCode((string) $this->voiceConfig['languageCode']);
+        $voice->setName((string) $this->voiceConfig['name']);
+        $voice->setSsmlGender((int) $this->voiceConfig['ssmlGender']);
 
         $audioConfig = new AudioConfig();
         $audioConfig->setAudioEncoding(AudioEncoding::MP3);
-        $audioConfig->setSpeakingRate($this->voiceConfig['speakingRate']);
-        $audioConfig->setPitch($this->voiceConfig['pitch']);
+        $audioConfig->setSpeakingRate((float) $this->voiceConfig['speakingRate']);
+        $audioConfig->setPitch((float) $this->voiceConfig['pitch']);
 
         try {
             $response = $this->client->synthesizeSpeech($input, $voice, $audioConfig);

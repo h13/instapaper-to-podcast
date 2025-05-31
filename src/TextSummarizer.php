@@ -52,9 +52,14 @@ class TextSummarizer
                 ],
             ]);
 
+            /** @var array{predictions?: array<int, array{content?: string}>}|null $result */
             $result = json_decode($response->getBody()->getContents(), true);
 
-            return $result['predictions'][0]['content'] ?? $text;
+            if (! is_array($result) || ! isset($result['predictions'][0]['content'])) {
+                return mb_substr($text, 0, $maxLength) . '...';
+            }
+
+            return $result['predictions'][0]['content'];
 
         } catch (\Exception $e) {
             error_log('Failed to summarize text: ' . $e->getMessage());
@@ -90,7 +95,12 @@ PROMPT;
                 ['headers' => ['Metadata-Flavor' => 'Google']]
             );
 
+            /** @var array{access_token?: string}|null $data */
             $data = json_decode($response->getBody()->getContents(), true);
+
+            if (! is_array($data) || ! isset($data['access_token'])) {
+                throw new \RuntimeException('Invalid token response');
+            }
 
             return $data['access_token'];
         } catch (\Exception $e) {

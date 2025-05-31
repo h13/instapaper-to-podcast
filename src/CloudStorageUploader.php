@@ -10,7 +10,6 @@ use Google\Cloud\Storage\StorageClient;
  */
 class CloudStorageUploader
 {
-    private StorageClient $storage;
     private Bucket $bucket;
     private string $bucketName;
 
@@ -21,9 +20,9 @@ class CloudStorageUploader
             $config['keyFilePath'] = $keyFilePath;
         }
 
-        $this->storage = new StorageClient($config);
+        $storage = new StorageClient($config);
         $this->bucketName = $bucketName;
-        $this->bucket = $this->storage->bucket($bucketName);
+        $this->bucket = $storage->bucket($bucketName);
     }
 
     /**
@@ -65,6 +64,7 @@ class CloudStorageUploader
      * @param array<string, mixed> $data
      * @param array<string, mixed> $metadata
      * @return array{name: string, publicUrl: string}
+     * @psalm-suppress PossiblyUnusedReturnValue
      */
     public function uploadJson(string $objectName, array $data, array $metadata = []): array
     {
@@ -88,13 +88,16 @@ class CloudStorageUploader
         ];
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function exists(string $objectName): bool
     {
         return $this->bucket->object($objectName)->exists();
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array<array-key, mixed>|null
      */
     public function readJson(string $objectName): ?array
     {
