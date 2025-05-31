@@ -1,0 +1,66 @@
+{
+    "authors": [
+        {
+            "name": "h13",
+            "email": "h13.webmail@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "InstapaperToPodcast\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "InstapaperToPodcast\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.3"
+        },
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "description": "Convert Instapaper articles to podcast episodes using Google Cloud services",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "name": "instapaper-to-podcast/cloud-functions",
+    "prefer-stable": true,
+    "require": {
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-simplexml": "*",
+        "ext-dom": "*",
+        "google/cloud-functions-framework": "^1.1",
+        "google/cloud-storage": "^1.35",
+        "google/cloud-text-to-speech": "^1.7",
+        "guzzlehttp/guzzle": "^7.8",
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.40",
+        "mockery/mockery": "^1.6",
+        "phpstan/phpstan": "^1.10",
+        "phpstan/phpstan-strict-rules": "^1.6",
+        "phpunit/phpunit": "^10.5",
+        "vimeo/psalm": "^5.0"
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@phpstan",
+            "@test"
+        ],
+        "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "vendor/bin/php-cs-fixer fix",
+        "phpstan": "vendor/bin/phpstan analyse src --level=5",
+        "psalm": "vendor/bin/psalm",
+        "psalm-info": "vendor/bin/psalm --show-info=true",
+        "serve": "FUNCTION_SIGNATURE_TYPE=http FUNCTION_TARGET=instapaperToPodcast php -S localhost:8080 vendor/google/cloud-functions-framework/router.php",
+        "test": "vendor/bin/phpunit --no-coverage",
+        "test-coverage": "vendor/bin/phpunit"
+    },
+    "type": "project"
+}

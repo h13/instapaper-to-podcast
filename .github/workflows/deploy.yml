@@ -1,0 +1,162 @@
+# .github/workflows/deploy.yml
+name: Deploy to Google Cloud Functions
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+env:
+  FUNCTION_NAME: instapaper-to-podcast
+  REGION: asia-northeast1
+  RUNTIME: php82
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, xml, json
+        tools: composer:v2
+    
+    - name: Install dependencies (production only)
+      run: composer install --no-dev --optimize-autoloader --no-interaction
+    
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+        service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+    
+    - name: Create env.yaml from secrets
+      run: |
+        cat > .env.yaml << EOF
+        INSTAPAPER_CONSUMER_KEY: "${{ secrets.INSTAPAPER_CONSUMER_KEY }}"
+        INSTAPAPER_CONSUMER_SECRET: "${{ secrets.INSTAPAPER_CONSUMER_SECRET }}"
+        INSTAPAPER_ACCESS_TOKEN: "${{ secrets.INSTAPAPER_ACCESS_TOKEN }}"
+        INSTAPAPER_ACCESS_TOKEN_SECRET: "${{ secrets.INSTAPAPER_ACCESS_TOKEN_SECRET }}"
+        GCP_PROJECT_ID: "${{ secrets.GCP_PROJECT_ID }}"
+        STORAGE_BUCKET_NAME: "${{ secrets.STORAGE_BUCKET_NAME }}"
+        PODCAST_TITLE: "${{ vars.PODCAST_TITLE || 'My Instapaper Podcast' }}"
+        PODCAST_DESCRIPTION: "${{ vars.PODCAST_DESCRIPTION || 'Articles from Instapaper converted to audio' }}"
+        PODCAST_AUTHOR: "${{ vars.PODCAST_AUTHOR || 'Instapaper to Podcast' }}"
+        PODCAST_EMAIL: "${{ vars.PODCAST_EMAIL || 'podcast@example.com' }}"
+        PODCAST_CATEGORY: "${{ vars.PODCAST_CATEGORY || 'News' }}"
+        PODCAST_LANGUAGE: "${{ vars.PODCAST_LANGUAGE || 'ja' }}"
+        TTS_LANGUAGE_CODE: "${{ vars.TTS_LANGUAGE_CODE || 'ja-JP' }}"
+        TTS_VOICE_NAME: "${{ vars.TTS_VOICE_NAME || 'ja-JP-Neural2-B' }}"
+        TTS_SPEAKING_RATE: "${{ vars.TTS_SPEAKING_RATE || '1.0' }}"
+        EOF
+    
+    - name: Deploy to Cloud Functions
+      id: deploy
+      run: |
+        gcloud functions deploy ${{ env.FUNCTION_NAME }} \
+          --gen2 \
+          --runtime=${{ env.RUNTIME }} \
+          --region=${{ env.REGION }} \
+          --source=. \
+          --entry-point=instapaperToPodcast \
+          --trigger-http \
+          --allow-unauthenticated \
+          --env-vars-file=.env.yaml \
+          --memory=512MB \
+          --timeout=540s \
+          --max-instances=10 \
+          --min-instances=0 \
+          --service-account="${{ secrets.WIF_SERVICE_ACCOUNT }}"
+    
+    - name: Get function URL
+      id: function-url
+      run: |
+        URL=$(gcloud functions describe ${{ env.FUNCTION_NAME }} \
+          --region=${{ env.REGION }} \
+          --format='value(serviceConfig.uri)')
+        echo "url=$URL" >> $GITHUB_OUTPUT
+        echo "Function deployed to: $URL"
+    
+    - name: Test deployment
+      run: |
+        echo "Testing function deployment..."
+        RESPONSE=$(curl -s -X POST "${{ steps.function-url.outputs.url }}" \
+          -H "Content-Type: application/json" \
+          -d '{"limit":1,"folder":"unread"}')
+        echo "Response: $RESPONSE"
+        
+        # Check if response contains success
+        if echo "$RESPONSE" | grep -q '"status":"success"'; then
+          echo "✅ Deployment test passed"
+        else
+          echo "❌ Deployment test failed"
+          exit 1
+        fi
+    
+    - name: Update Cloud Scheduler
+      if: github.event.inputs.environment != 'staging'
+      run: |
+        # Update or create scheduler job
+        gcloud scheduler jobs update http instapaper-podcast-job \
+          --location=${{ env.REGION }} \
+          --uri="${{ steps.function-url.outputs.url }}" \
+          --http-method=POST \
+          --headers="Content-Type=application/json" \
+          --message-body='{"limit":5,"folder":"unread"}' || \
+        gcloud scheduler jobs create http instapaper-podcast-job \
+          --location=${{ env.REGION }} \
+          --schedule="0 8 * * *" \
+          --uri="${{ steps.function-url.outputs.url }}" \
+          --http-method=POST \
+          --headers="Content-Type=application/json" \
+          --message-body='{"limit":5,"folder":"unread"}' \
+          --time-zone="Asia/Tokyo" \
+          --description="Daily Instapaper to Podcast conversion"
+    
+    - name: Create deployment summary
+      run: |
+        cat >> $GITHUB_STEP_SUMMARY << EOF
+        ## 🚀 Deployment Summary
+        
+        - **Function**: ${{ env.FUNCTION_NAME }}
+        - **Region**: ${{ env.REGION }}
+        - **Runtime**: ${{ env.RUNTIME }}
+        - **URL**: ${{ steps.function-url.outputs.url }}
+        - **Environment**: ${{ github.event.inputs.environment || 'production' }}
+        - **Commit**: ${{ github.sha }}
+        
+        ### 📡 Podcast Feed
+        
+        RSS Feed URL: https://storage.googleapis.com/${{ secrets.STORAGE_BUCKET_NAME }}/podcast.xml
+        
+        ### 🧪 Test the function
+
+        \`\`\`bash
+        curl -X POST "${{ steps.function-url.outputs.url }}" \\
+          -H "Content-Type: application/json" \\
+          -d '{"limit":5,"folder":"unread"}'
+        \`\`\`
+        EOF
+
