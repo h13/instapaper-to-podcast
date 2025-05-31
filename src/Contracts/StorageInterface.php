@@ -11,7 +11,7 @@ interface StorageInterface
 {
     /**
      * Upload a file to storage
-     * 
+     *
      * @param array<string, mixed> $metadata
      * @return array{name: string, size: int, created: string, publicUrl: string, mediaLink: string}
      */
@@ -19,7 +19,7 @@ interface StorageInterface
 
     /**
      * Upload JSON data to storage
-     * 
+     *
      * @param array<string, mixed> $data
      * @param array<string, mixed> $metadata
      * @return array{name: string, publicUrl: string}
@@ -33,7 +33,7 @@ interface StorageInterface
 
     /**
      * Read JSON data from storage
-     * 
+     *
      * @return array<array-key, mixed>|null
      */
     public function readJson(string $objectName): ?array;

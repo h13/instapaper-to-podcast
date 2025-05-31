@@ -11,7 +11,7 @@ interface PodcastFeedGeneratorInterface
 {
     /**
      * Generate RSS feed from episodes
-     * 
+     *
      * @param list<array<string, mixed>> $episodes
      */
     public function generateFeed(array $episodes): string;

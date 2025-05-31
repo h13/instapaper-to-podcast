@@ -14,7 +14,7 @@ final class BucketName
     public function __construct(string $value)
     {
         $value = trim($value);
-        
+
         if ($value === '') {
             throw new \InvalidArgumentException('Bucket name cannot be empty');
         }

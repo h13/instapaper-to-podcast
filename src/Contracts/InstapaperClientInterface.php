@@ -6,14 +6,14 @@ namespace InstapaperToPodcast\Contracts;
 
 /**
  * Interface for Instapaper API client
- * 
+ *
  * @psalm-import-type Bookmark from \InstapaperToPodcast\ConfigTypes
  */
 interface InstapaperClientInterface
 {
     /**
      * Get bookmarks from Instapaper
-     * 
+     *
      * @return list<Bookmark>
      * @throws \InstapaperToPodcast\Exceptions\InstapaperApiException
      */
@@ -21,7 +21,7 @@ interface InstapaperClientInterface
 
     /**
      * Get article text from Instapaper
-     * 
+     *
      * @throws \InstapaperToPodcast\Exceptions\InstapaperApiException
      */
     public function getText(int $bookmarkId): string;

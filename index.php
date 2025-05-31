@@ -85,6 +85,7 @@ function instapaperToPodcast(ServerRequestInterface $request): string
                     'folder' => $folder,
                 ],
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
             return $json !== false ? $json : '{}';
         }
 
@@ -109,6 +110,7 @@ function instapaperToPodcast(ServerRequestInterface $request): string
             'feedUrl' => sprintf('https://storage.googleapis.com/%s/podcast.xml', $config['storage']['bucket_name']),
             'timestamp' => date('c'),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
         return $json !== false ? $json : '{}';
 
     } catch (\Exception $e) {
@@ -120,6 +122,7 @@ function instapaperToPodcast(ServerRequestInterface $request): string
             'message' => $e->getMessage(),
             'timestamp' => date('c'),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
         return $json !== false ? $json : '{}';
     }
 }

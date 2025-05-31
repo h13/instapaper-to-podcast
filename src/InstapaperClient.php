@@ -84,6 +84,7 @@ final class InstapaperClient implements InstapaperClientInterface
 
         } catch (RequestException $e) {
             $response = $e->getResponse();
+
             throw InstapaperApiException::fromRequestFailure(
                 $e->getMessage(),
                 $response !== null ? $response->getStatusCode() : null
@@ -108,6 +109,7 @@ final class InstapaperClient implements InstapaperClientInterface
 
         } catch (RequestException $e) {
             $response = $e->getResponse();
+
             throw InstapaperApiException::fromRequestFailure(
                 $e->getMessage(),
                 $response !== null ? $response->getStatusCode() : null

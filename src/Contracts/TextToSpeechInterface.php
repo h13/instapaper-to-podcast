@@ -11,7 +11,7 @@ interface TextToSpeechInterface
 {
     /**
      * Generate speech from text and save to file
-     * 
+     *
      * @return array{size: int, duration: string}
      * @throws \InstapaperToPodcast\Exceptions\TextProcessingException
      */
