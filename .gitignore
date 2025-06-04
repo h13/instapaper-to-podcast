@@ -40,4 +40,4 @@ service-account-key.json
 /tmp/
 
 # Claude
-.claude/settings.local.json
+.claude/

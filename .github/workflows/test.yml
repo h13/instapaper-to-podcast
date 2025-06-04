@@ -1,8 +1,4 @@
-# .github/workflows/test.yml
 name: Test
-permissions:
-  contents: read
-  id-token: write
 
 on:
   push:
@@ -13,50 +9,45 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     strategy:
       matrix:
-        php-version: ['8.3']
+        service:
+          - instapaper-fetcher
+          - text-summarizer
+          - text-to-speech
+          - podcast-publisher
+        php-version:
+          - '8.3'
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-version }}
-        extensions: mbstring, xml, ctype, iconv, intl, json
-        coverage: xdebug
-        tools: composer:v2
-    
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
-    
-    - name: Cache Composer packages
-      uses: actions/cache@v4
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php-version }}-
-    
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-interaction
-    
-    - name: Run PHPStan
-      run: composer phpstan
-    
-    - name: Run PHP CS Fixer
-      run: composer cs-check
-    
-    - name: Run tests with coverage
-      run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
-      env:
-        XDEBUG_MODE: coverage
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+      - uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: xdebug
+          
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: microservices/${{ matrix.service }}/vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.service }}-${{ hashFiles(format('microservices/{0}/composer.lock', matrix.service)) }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.service }}-
+            
+      - name: Install dependencies
+        working-directory: microservices/${{ matrix.service }}
+        run: |
+          composer install --prefer-dist --no-progress
+          
+      - name: Run tests with coverage
+        working-directory: microservices/${{ matrix.service }}
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: microservices/${{ matrix.service }}/coverage.xml
+          flags: ${{ matrix.service }}
+          name: ${{ matrix.service }}-coverage

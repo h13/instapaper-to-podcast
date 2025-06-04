@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  instapaper-fetcher:
+    build: ./microservices/instapaper-fetcher
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./microservices/instapaper-fetcher/.env.json
+    volumes:
+      - ./microservices/instapaper-fetcher:/app
+      - /app/vendor
+    command: php -S 0.0.0.0:8081 -t public/
+    networks:
+      - podcast-network
+
+  text-summarizer:
+    build: ./microservices/text-summarizer
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./microservices/text-summarizer/.env.json
+    volumes:
+      - ./microservices/text-summarizer:/app
+      - /app/vendor
+    command: php -S 0.0.0.0:8082 -t public/
+    networks:
+      - podcast-network
+    depends_on:
+      - instapaper-fetcher
+
+  text-to-speech:
+    build: ./microservices/text-to-speech
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./microservices/text-to-speech/.env.json
+    volumes:
+      - ./microservices/text-to-speech:/app
+      - /app/vendor
+    command: php -S 0.0.0.0:8083 -t public/
+    networks:
+      - podcast-network
+    depends_on:
+      - text-summarizer
+
+  podcast-publisher:
+    build: ./microservices/podcast-publisher
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./microservices/podcast-publisher/.env.json
+    volumes:
+      - ./microservices/podcast-publisher:/app
+      - /app/vendor
+    command: php -S 0.0.0.0:8084 -t public/
+    networks:
+      - podcast-network
+    depends_on:
+      - text-to-speech
+
+networks:
+  podcast-network:
+    driver: bridge
