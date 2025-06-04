@@ -13,7 +13,7 @@ NC='\033[0m'
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-MICROSERVICES_DIR="$PROJECT_ROOT/microservices"
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")"
 
 echo -e "${BLUE}🚀 Instapaper to Podcast マイクロサービスのデプロイを開始します${NC}"
 
@@ -31,11 +31,13 @@ case $DEPLOY_METHOD in
         
         # .env.jsonファイルの確認
         for service in instapaper-fetcher text-summarizer text-to-speech podcast-publisher; do
-            if [ ! -f "microservices/$service/.env.json" ]; then
-                echo -e "${YELLOW}⚠️  microservices/$service/.env.json が見つかりません。.env.json.example からコピーします...${NC}"
-                cp "microservices/$service/.env.json.example" "microservices/$service/.env.json"
-                echo -e "${RED}❌ microservices/$service/.env.json を編集してください${NC}"
-                exit 1
+            if [ ! -f "$SERVICES_ROOT/$service/.env.json" ]; then
+                echo -e "${YELLOW}⚠️  $SERVICES_ROOT/$service/.env.json が見つかりません。.env.json.example からコピーします...${NC}"
+                if [ -f "$SERVICES_ROOT/$service/.env.json.example" ]; then
+                    cp "$SERVICES_ROOT/$service/.env.json.example" "$SERVICES_ROOT/$service/.env.json"
+                    echo -e "${RED}❌ $SERVICES_ROOT/$service/.env.json を編集してください${NC}"
+                    exit 1
+                fi
             fi
         done
         
@@ -64,7 +66,12 @@ case $DEPLOY_METHOD in
         
         # Kubernetes マニフェストの適用
         echo -e "\n${BLUE}📋 Kubernetes マニフェストを適用しています...${NC}"
-        kubectl apply -f k8s/
+        if [ -d "k8s/" ]; then
+            kubectl apply -f k8s/
+        else
+            echo -e "${RED}❌ k8s/ ディレクトリが見つかりません${NC}"
+            exit 1
+        fi
         
         echo -e "\n${GREEN}✅ Kubernetes デプロイが完了しました！${NC}"
         kubectl get pods
@@ -84,9 +91,9 @@ case $DEPLOY_METHOD in
             SERVICE_NAME="instapaper-$service"
             IMAGE_NAME="gcr.io/$PROJECT_ID/$SERVICE_NAME"
             
-            # Cloud Buildでイメージをビルド
-            cd "$MICROSERVICES_DIR/$service"
-            gcloud builds submit --tag "$IMAGE_NAME" --project "$PROJECT_ID"
+            # Cloud Buildでイメージをビルド（GitHubから直接）
+            gcloud builds submit --tag "$IMAGE_NAME" --project "$PROJECT_ID" \
+                "https://github.com/h13/$service.git"
             
             # Cloud Runにデプロイ
             gcloud run deploy "$SERVICE_NAME" \
