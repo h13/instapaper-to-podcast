@@ -15,7 +15,7 @@ NC='\033[0m'
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-MICROSERVICES_DIR="$PROJECT_ROOT/microservices"
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")"
 
 # 必要なコマンドの確認
 check_command() {
@@ -55,34 +55,20 @@ else
     echo -e "${GREEN}✓ PHP $PHP_VERSION${NC}"
 fi
 
-# 各マイクロサービスの依存関係をインストール
-echo -e "\n${BLUE}📚 各マイクロサービスの依存関係をインストールしています...${NC}"
+# Docker Compose設定ファイルの確認
+echo -e "\n${BLUE}📚 Docker Compose設定を確認しています...${NC}"
 
-SERVICES=("instapaper-fetcher" "text-summarizer" "text-to-speech" "podcast-publisher" "common")
-
-for service in "${SERVICES[@]}"; do
-    SERVICE_DIR="$MICROSERVICES_DIR/$service"
-    
-    if [ -d "$SERVICE_DIR" ]; then
-        echo -e "\n${BLUE}📦 $service の依存関係をインストール中...${NC}"
-        cd "$SERVICE_DIR"
-        
-        if [ -f "composer.json" ]; then
-            composer install --no-interaction
-            echo -e "${GREEN}✓ $service の依存関係をインストールしました${NC}"
-        else
-            echo -e "${YELLOW}⚠️  $service に composer.json が見つかりません${NC}"
-        fi
-        
-        # .env.json.example から .env.json をコピー
-        if [ -f ".env.json.example" ] && [ ! -f ".env.json" ]; then
-            cp .env.json.example .env.json
-            echo -e "${YELLOW}📝 $service/.env.json を作成しました。必要な情報を入力してください。${NC}"
-        fi
+if [ -f "$PROJECT_ROOT/compose.override.yml" ]; then
+    echo -e "${GREEN}✓ compose.override.yml が見つかりました${NC}"
+else
+    if [ -f "$PROJECT_ROOT/compose.override.yml.example" ]; then
+        cp "$PROJECT_ROOT/compose.override.yml.example" "$PROJECT_ROOT/compose.override.yml"
+        echo -e "${YELLOW}📝 compose.override.yml を作成しました。必要な環境変数を設定してください。${NC}"
     else
-        echo -e "${RED}❌ $service ディレクトリが見つかりません${NC}"
+        echo -e "${YELLOW}⚠️  compose.override.yml が見つかりません${NC}"
+        echo -e "${YELLOW}    各サービスの環境変数を設定するために作成することを推奨します${NC}"
     fi
-done
+fi
 
 # Google Cloud セットアップ（オプション）
 echo -e "\n${BLUE}☁️  Google Cloud をセットアップしますか？ (y/N)${NC}"
@@ -169,5 +155,6 @@ echo "1. 各サービスの .env ファイルを編集して必要な情報を�
 echo "   - Instapaper API認証情報"
 echo "   - OpenAI API キー"
 echo "   - Google Cloud 認証情報"
-echo "2. scripts/test-local.sh でローカルテストを実行してください"
-echo "3. scripts/deploy.sh でデプロイしてください"
+echo "2. docker compose up -d でサービスを起動してください"
+echo "3. scripts/run-pipeline.sh でパイプラインを実行してください"
+echo "4. scripts/deploy.sh でデプロイしてください"

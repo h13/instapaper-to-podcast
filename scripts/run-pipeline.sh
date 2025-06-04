@@ -13,7 +13,8 @@ NC='\033[0m'
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-MICROSERVICES_DIR="$PROJECT_ROOT/microservices"
+# 各サービスは独立したリポジトリに配置
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")"
 
 echo -e "${BLUE}🚀 Instapaper to Podcast パイプラインを実行します${NC}"
 
@@ -29,12 +30,20 @@ LIMIT=${LIMIT:-5}
 
 case $RUN_METHOD in
     1)
-        echo -e "\n${BLUE}🔧 CLI コマンドでパイプラインを実行します${NC}"
+        echo -e "\n${BLUE}🔧 Docker コンテナ経由でCLIコマンドを実行します${NC}"
+        
+        # サービスが起動しているか確認
+        echo -e "\n${BLUE}🏭 コンテナの起動を確認中...${NC}"
+        cd "$PROJECT_ROOT"
+        if ! docker compose ps | grep -q "Up"; then
+            echo -e "${YELLOW}⚠️  コンテナが起動していません。起動します...${NC}"
+            docker compose up -d
+            sleep 5
+        fi
         
         # Step 1: Instapaper から記事を取得
         echo -e "\n${BLUE}📚 Step 1: Instapaper から記事を取得中...${NC}"
-        cd "$MICROSERVICES_DIR/instapaper-fetcher"
-        if php bin/fetch.php --limit=$LIMIT; then
+        if docker compose exec instapaper-fetcher php bin/fetch.php --limit=$LIMIT; then
             echo -e "${GREEN}✓ 記事の取得が完了しました${NC}"
         else
             echo -e "${RED}❌ 記事の取得に失敗しました${NC}"
@@ -43,8 +52,7 @@ case $RUN_METHOD in
         
         # Step 2: 記事を要約
         echo -e "\n${BLUE}🤖 Step 2: 記事を要約中...${NC}"
-        cd "$MICROSERVICES_DIR/text-summarizer"
-        if php bin/summarize.php --limit=$LIMIT; then
+        if docker compose exec text-summarizer php bin/summarize.php --limit=$LIMIT; then
             echo -e "${GREEN}✓ 記事の要約が完了しました${NC}"
         else
             echo -e "${RED}❌ 記事の要約に失敗しました${NC}"
@@ -53,8 +61,7 @@ case $RUN_METHOD in
         
         # Step 3: 音声ファイルを生成
         echo -e "\n${BLUE}🎙️ Step 3: 音声ファイルを生成中...${NC}"
-        cd "$MICROSERVICES_DIR/text-to-speech"
-        if php bin/generate-audio.php --limit=$LIMIT; then
+        if docker compose exec text-to-speech php bin/generate-audio.php --limit=$LIMIT; then
             echo -e "${GREEN}✓ 音声ファイルの生成が完了しました${NC}"
         else
             echo -e "${RED}❌ 音声ファイルの生成に失敗しました${NC}"
@@ -63,8 +70,7 @@ case $RUN_METHOD in
         
         # Step 4: ポッドキャストフィードを生成
         echo -e "\n${BLUE}📡 Step 4: ポッドキャストフィードを生成中...${NC}"
-        cd "$MICROSERVICES_DIR/podcast-publisher"
-        if php bin/publish.php; then
+        if docker compose exec podcast-publisher php bin/publish.php; then
             echo -e "${GREEN}✓ ポッドキャストフィードの生成が完了しました${NC}"
         else
             echo -e "${RED}❌ ポッドキャストフィードの生成に失敗しました${NC}"
@@ -88,7 +94,7 @@ case $RUN_METHOD in
         
         if [ "$SERVICES_UP" = false ]; then
             echo -e "${YELLOW}⚠️  サービスが起動していません。${NC}"
-            echo -e "${YELLOW}   'cd microservices && docker-compose up -d' でサービスを起動してください。${NC}"
+            echo -e "${YELLOW}   'cd $PROJECT_ROOT && docker-compose up -d' でサービスを起動してください。${NC}"
             exit 1
         fi
         

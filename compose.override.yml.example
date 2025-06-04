@@ -1,0 +1,50 @@
+# Docker Compose override file for local development
+# Copy this file to compose.override.yml and configure your environment variables
+
+services:
+  instapaper-fetcher:
+    environment:
+      # Instapaper API credentials
+      - INSTAPAPER_CONSUMER_KEY=your_consumer_key
+      - INSTAPAPER_CONSUMER_SECRET=your_consumer_secret
+      - INSTAPAPER_ACCESS_TOKEN=your_access_token
+      - INSTAPAPER_ACCESS_TOKEN_SECRET=your_access_token_secret
+      # Google Cloud Storage
+      - GCP_PROJECT_ID=your_project_id
+      - STORAGE_BUCKET_NAME=your_storage_bucket
+
+  text-summarizer:
+    environment:
+      # OpenAI API
+      - OPENAI_API_KEY=your_openai_api_key
+      # Google Cloud Storage
+      - GCP_PROJECT_ID=your_project_id
+      - STORAGE_BUCKET_NAME=your_storage_bucket
+
+  text-to-speech:
+    environment:
+      # Google Cloud Text-to-Speech
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      - GCP_PROJECT_ID=your_project_id
+      - STORAGE_BUCKET_NAME=your_storage_bucket
+      # TTS settings
+      - TTS_LANGUAGE_CODE=ja-JP
+      - TTS_VOICE_NAME=ja-JP-Neural2-B
+      - TTS_SPEAKING_RATE=1.0
+    volumes:
+      # Mount your Google Cloud credentials
+      - ./credentials.json:/app/credentials.json:ro
+
+  podcast-publisher:
+    environment:
+      # Google Cloud Storage
+      - GCP_PROJECT_ID=your_project_id
+      - STORAGE_BUCKET_NAME=your_storage_bucket
+      - PODCAST_BUCKET_NAME=your_podcast_bucket
+      # Podcast metadata
+      - PODCAST_TITLE=My Instapaper Podcast
+      - PODCAST_DESCRIPTION=Articles from Instapaper converted to audio
+      - PODCAST_AUTHOR=Your Name
+      - PODCAST_EMAIL=your-email@example.com
+      - PODCAST_CATEGORY=News
+      - PODCAST_LANGUAGE=ja

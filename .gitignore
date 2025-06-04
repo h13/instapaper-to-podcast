@@ -1,13 +1,6 @@
-# Composer
-/vendor/
-composer.phar
-
-# Environment files
-.env
-.env.local
-.env.*.local
-.env.yaml
-env.yaml
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .idea/
@@ -15,29 +8,40 @@ env.yaml
 *.swp
 *.swo
 *~
-.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env.json
+compose.override.yml
 
 # Logs
 *.log
-error_log
+logs/
 
-# Test coverage
-/coverage/
-.phpunit.result.cache
-/build/
+# Dependencies
+vendor/
+node_modules/
 
-# PHP-CS-Fixer
-.php-cs-fixer.cache
+# Build artifacts
+build/
+dist/
 
-# Google Cloud
-.gcloudignore
-credentials.json
-service-account-key.json
+# Docker
+.docker/
 
 # Temporary files
 *.tmp
 *.temp
-/tmp/
+tmp/
+temp/
 
-# Claude
-.claude/
+.claude/settings.local.json
+
+# Test artifacts
+.phpunit.result.cache
+.phpunit.cache/
+coverage.xml
+coverage/
+*.coverage

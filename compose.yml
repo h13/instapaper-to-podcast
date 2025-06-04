@@ -1,28 +1,22 @@
-version: '3.8'
-
 services:
   instapaper-fetcher:
-    build: ./microservices/instapaper-fetcher
+    build: https://github.com/h13/instapaper-fetcher.git
     ports:
       - "8081:8081"
-    env_file:
-      - ./microservices/instapaper-fetcher/.env.json
-    volumes:
-      - ./microservices/instapaper-fetcher:/app
-      - /app/vendor
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true
     command: php -S 0.0.0.0:8081 -t public/
     networks:
       - podcast-network
 
   text-summarizer:
-    build: ./microservices/text-summarizer
+    build: https://github.com/h13/text-summarizer.git
     ports:
       - "8082:8082"
-    env_file:
-      - ./microservices/text-summarizer/.env.json
-    volumes:
-      - ./microservices/text-summarizer:/app
-      - /app/vendor
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true
     command: php -S 0.0.0.0:8082 -t public/
     networks:
       - podcast-network
@@ -30,14 +24,12 @@ services:
       - instapaper-fetcher
 
   text-to-speech:
-    build: ./microservices/text-to-speech
+    build: https://github.com/h13/text-to-speech.git
     ports:
       - "8083:8083"
-    env_file:
-      - ./microservices/text-to-speech/.env.json
-    volumes:
-      - ./microservices/text-to-speech:/app
-      - /app/vendor
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true
     command: php -S 0.0.0.0:8083 -t public/
     networks:
       - podcast-network
@@ -45,14 +37,12 @@ services:
       - text-summarizer
 
   podcast-publisher:
-    build: ./microservices/podcast-publisher
+    build: https://github.com/h13/podcast-publisher.git
     ports:
       - "8084:8084"
-    env_file:
-      - ./microservices/podcast-publisher/.env.json
-    volumes:
-      - ./microservices/podcast-publisher:/app
-      - /app/vendor
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true
     command: php -S 0.0.0.0:8084 -t public/
     networks:
       - podcast-network
